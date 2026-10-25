@@ -116,7 +116,7 @@ If you use this code, please cite the paper:
 
 ```
 @article{DynamicCoVaR,
-  title  = {Dynamic CoVaR: Drifting Tail Dependence and Fast Variational Inference},
+  title  = {Dynamic CoVaR},
   author = {Herculano, Miguel C. and Pinheiro, Jorge and Tsafos, Yannis D.},
   year   = {2026},
   note   = {Working paper}
