@@ -10,7 +10,11 @@ This repository is a **proof of concept**. Its purpose is to make the method eas
 
 In the standard CoVaR, the link between an institution and the financial system is a constant coefficient. All movement in the CoVaR comes from the state variables, so **without state variables the CoVaR is a straight line**. The Dynamic CoVaR lets the coefficients follow random walks. It can therefore track changes in tail dependence that the state variables miss.
 
-![Constant CoVaR without state variables](figures/simulation_constant_covar.png)
+**Simulations:**
+- When the true coefficients drift, the variational posterior tracks them, with errors two to four times smaller than those of a classic quantile regression.
+- When the coefficients are constant, the method selects no drift, and its estimates coincide with the classic quantile regression.
+
+![Simulated drifting coefficients](figures/simulation_coefficients.png)
 
 ## Quick start
 
@@ -52,28 +56,35 @@ For a single time-varying quantile regression, use `dynamic_covar.fit(y, X, q)`.
 
 ![JPMorgan coefficients](figures/jpmorgan_coefficients_q05.png)
 
-**Simulations** ([figure](figures/simulation_coefficients.png)):
-- When the true coefficients drift, the variational posterior tracks them, with errors two to four times smaller than those of a classic quantile regression.
-- When the coefficients are constant, the method selects no drift, and its estimates coincide with the classic quantile regression.
-
 ## Method in brief
 
-For a quantile level `q`, two quantile regressions are estimated. Both have random-walk coefficients:
+For a quantile level $q$, two quantile regressions are estimated, both with time-varying coefficients:
 
+```math
+\begin{aligned}
+X_t^i &= \alpha_t^i + \gamma_t^{i\prime} M_{t-1} + \varepsilon_t^i, \\
+X_t^S &= \alpha_t^S + \gamma_t^{S\prime} M_{t-1} + \beta_t X_t^i + \varepsilon_t^S, \\
+\mathrm{VaR}_t &= \alpha_t^i + \gamma_t^{i\prime} M_{t-1}, \\
+\mathrm{CoVaR}_t &= \alpha_t^S + \gamma_t^{S\prime} M_{t-1} + \beta_t \, \mathrm{VaR}_t, \\
+\Delta\mathrm{CoVaR}_t &= \beta_t \left( \mathrm{VaR}_{q,t} - \mathrm{VaR}_{0.5,t} \right),
+\end{aligned}
 ```
-institution:  X_t^i = a_t^i + g_t^i' M_{t-1} + e_t^i
-system:       X_t^S = a_t^S + g_t^S' M_{t-1} + beta_t X_t^i + e_t^S
-CoVaR_t       = a_t^S + g_t^S' M_{t-1} + beta_t VaR_t
-ΔCoVaR_t      = beta_t (VaR_{q,t} - VaR_{0.5,t})
+
+where the $q$-quantile of each $\varepsilon_t$ is zero. The coefficients $b_t$ of each regression follow random walks, $b_t = b_{t-1} + \eta_t$ with $\eta_t \sim N(0, Q)$.
+
+Each regression uses the asymmetric Laplace working likelihood in its normal-exponential mixture form,
+
+```math
+y_t = x_t' b_t + \theta z_t + \phi \sqrt{\sigma z_t}\, u_t, \qquad z_t \sim \mathrm{Exp}(\sigma), \quad u_t \sim N(0,1), \qquad \theta = \frac{1-2q}{q(1-q)}, \quad \phi^2 = \frac{2}{q(1-q)}.
 ```
 
-Each regression uses the asymmetric Laplace working likelihood in its normal-exponential mixture form. Mean-field variational Bayes is used in three blocks:
+Mean-field variational Bayes uses three blocks:
 
-- **The whole coefficient path** is one Gaussian block. A Kalman filter and the Durbin–Koopman smoother compute it exactly, in time linear in the sample size.
-- **The mixing variables** follow generalised inverse Gaussian distributions with closed-form moments.
-- **The asymmetric Laplace scale** is inverse gamma.
+- **The whole coefficient path** $b_{1:T}$ is one Gaussian block. A Kalman filter and the Durbin–Koopman smoother compute it exactly, in $O(T)$ time.
+- **The mixing variables** $z_t$ follow generalised inverse Gaussian distributions with closed-form moments.
+- **The asymmetric Laplace scale** $\sigma$ is inverse gamma.
 
-The coordinate updates are accelerated by squared extrapolation, and the evidence lower bound never decreases. The coefficients' drift speed `kappa` is chosen by maximising the evidence lower bound, so the data decide how much the coefficients move. One fit on 10,000 daily observations takes about a second.
+The coordinate updates are accelerated by squared extrapolation, and the evidence lower bound never decreases. The drift covariance is $Q = \mathrm{diag}\big((\kappa s_j)^2\big)$, where $s_j$ is the standard error of coefficient $j$ that a classic quantile regression would have on one year of data. The drift speed $\kappa$ is chosen by maximising the evidence lower bound, so the data decide how much the coefficients move. One fit on 10,000 daily observations takes about a second.
 
 ## Data
 
