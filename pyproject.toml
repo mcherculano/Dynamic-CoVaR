@@ -1,0 +1,20 @@
+[project]
+name = "dynamic-covar"
+version = "0.1.0"
+description = "Dynamic CoVaR: CoVaR with time-varying coefficients estimated by variational Bayes (proof of concept)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scipy>=1.10", "pandas>=2.0", "numba>=0.58", "statsmodels>=0.14",
+                "matplotlib>=3.7", "yfinance>=0.2"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["dynamic_covar"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

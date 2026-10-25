@@ -1,0 +1,7 @@
+numpy>=1.24
+scipy>=1.10
+pandas>=2.0
+numba>=0.58
+statsmodels>=0.14
+matplotlib>=3.7
+yfinance>=0.2
